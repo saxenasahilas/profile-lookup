@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Profile Lookup</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap');
+
+  :root{
+    --bg: #14161C;
+    --panel: #1B1E26;
+    --border: #2C303A;
+    --text: #E7E5DF;
+    --muted: #8C8F98;
+    --accent: #D9A441;
+    --accent-dim: #6b5a2e;
+    --error: #D9704F;
+  }
+
+  * { box-sizing: border-box; }
+
+  body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'IBM Plex Mono', ui-monospace, monospace;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .wrap {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 56px 24px 96px;
+  }
+
+  header {
+    margin-bottom: 40px;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 20px;
+  }
+
+  header .index-no {
+    color: var(--accent);
+    font-size: 13px;
+    letter-spacing: 0.04em;
+  }
+
+  h1 {
+    font-family: 'Source Serif 4', Georgia, serif;
+    font-weight: 600;
+    font-size: 32px;
+    margin: 6px 0 8px;
+  }
+
+  header p {
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0;
+    max-width: 56ch;
+  }
+
+  label {
+    display: block;
+    font-size: 12px;
+    color: var(--muted);
+    letter-spacing: 0.03em;
+    margin-bottom: 8px;
+  }
+
+  textarea, select {
+    width: 100%;
+    background: var(--panel);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-family: inherit;
+    font-size: 14px;
+    padding: 12px 14px;
+    border-radius: 3px;
+  }
+
+  textarea {
+    min-height: 130px;
+    resize: vertical;
+    line-height: 1.6;
+  }
+
+  textarea:focus, select:focus, button:focus {
+    outline: 2px solid var(--accent);
+    outline-offset: 1px;
+  }
+
+  .field {
+    margin-bottom: 22px;
+  }
+
+  .row {
+    display: flex;
+    gap: 22px;
+  }
+  .row .field { flex: 1; }
+
+  button {
+    background: var(--accent);
+    color: #1A1400;
+    border: none;
+    font-family: inherit;
+    font-weight: 600;
+    font-size: 14px;
+    padding: 12px 22px;
+    border-radius: 3px;
+    cursor: pointer;
+    letter-spacing: 0.02em;
+  }
+  button:hover { background: #e8b558; }
+  button:disabled { background: var(--accent-dim); cursor: progress; color: var(--muted); }
+
+  .status {
+    margin-top: 16px;
+    font-size: 13px;
+    color: var(--muted);
+  }
+  .status.error { color: var(--error); }
+
+  .results {
+    margin-top: 48px;
+  }
+
+  .results-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid var(--border);
+    padding-bottom: 10px;
+    margin-bottom: 4px;
+  }
+
+  .results-head h2 {
+    font-family: 'Source Serif 4', serif;
+    font-weight: 600;
+    font-size: 18px;
+    margin: 0;
+  }
+
+  .results-head a {
+    color: var(--accent);
+    font-size: 12px;
+    text-decoration: none;
+  }
+  .results-head a:hover { text-decoration: underline; }
+
+  .entry {
+    border-bottom: 1px solid var(--border);
+    padding: 18px 0;
+  }
+
+  .entry .num {
+    color: var(--accent);
+    font-size: 12px;
+    margin-right: 8px;
+  }
+
+  .entry .name {
+    font-family: 'Source Serif 4', serif;
+    font-size: 19px;
+    font-weight: 600;
+  }
+
+  .entry .name a { color: var(--text); text-decoration: none; }
+  .entry .name a:hover { color: var(--accent); }
+
+  .entry .headline {
+    color: var(--muted);
+    font-size: 13px;
+    margin-top: 4px;
+    line-height: 1.5;
+  }
+
+  .entry .meta {
+    margin-top: 8px;
+    font-size: 12px;
+    color: var(--muted);
+    display: flex;
+    flex-wrap: wrap;
+    gap: 4px 16px;
+  }
+  .entry .meta span b { color: var(--text); font-weight: 500; }
+
+  .empty {
+    color: var(--muted);
+    font-size: 13px;
+    padding: 24px 0;
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="index-no">LOOKUP / 001</div>
+      <h1>Profile Lookup</h1>
+      <p>Paste LinkedIn profile URLs or public identifiers (one per line) and pull structured profile data through your Apify actor.</p>
+    </header>
+
+    <form id="form">
+      <div class="field">
+        <label for="targets">Profile URLs or identifiers — one per line</label>
+        <textarea id="targets" placeholder="https://www.linkedin.com/in/someone/&#10;jane-doe-1234ab&#10;https://www.linkedin.com/in/another/"></textarea>
+      </div>
+
+      <div class="row">
+        <div class="field">
+          <label for="field">Input type</label>
+          <select id="field">
+            <option value="queries">Auto (URL or identifier)</option>
+            <option value="urls">Full profile URLs only</option>
+            <option value="publicIdentifiers">Public identifiers only</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="emailMode">Mode</label>
+          <select id="emailMode">
+            <option value="false">Profile details — $4 / 1,000</option>
+            <option value="true">Profile details + email — $10 / 1,000</option>
+          </select>
+        </div>
+      </div>
+
+      <button type="submit" id="submitBtn">Run lookup</button>
+      <div class="status" id="status"></div>
+    </form>
+
+    <div class="results" id="results" hidden>
+      <div class="results-head">
+        <h2 id="resultsTitle">Results</h2>
+        <a href="#" id="downloadLink">download json</a>
+      </div>
+      <div id="resultsList"></div>
+    </div>
+  </div>
+
+<script>
+const form = document.getElementById('form');
+const statusEl = document.getElementById('status');
+const submitBtn = document.getElementById('submitBtn');
+const resultsWrap = document.getElementById('results');
+const resultsList = document.getElementById('resultsList');
+const resultsTitle = document.getElementById('resultsTitle');
+const downloadLink = document.getElementById('downloadLink');
+
+let lastItems = [];
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+
+  const raw = document.getElementById('targets').value;
+  const targets = raw.split('\n').map(s => s.trim()).filter(Boolean);
+  const field = document.getElementById('field').value;
+  const emailMode = document.getElementById('emailMode').value === 'true';
+
+  if (targets.length === 0) {
+    setStatus('Add at least one profile URL or identifier.', true);
+    return;
+  }
+
+  setStatus('Running actor — this can take a bit for larger batches…');
+  submitBtn.disabled = true;
+  resultsWrap.hidden = true;
+
+  try {
+    const res = await fetch('/api/scrape', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ targets, field, emailMode })
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error + (data.detail ? ': ' + JSON.stringify(data.detail).slice(0, 300) : ''));
+    }
+
+    lastItems = Array.isArray(data.items) ? data.items : [];
+    renderResults(lastItems);
+    setStatus(`Done — ${lastItems.length} profile${lastItems.length === 1 ? '' : 's'} returned.`);
+  } catch (err) {
+    setStatus(err.message || 'Something went wrong.', true);
+  } finally {
+    submitBtn.disabled = false;
+  }
+});
+
+function setStatus(msg, isError) {
+  statusEl.textContent = msg;
+  statusEl.className = 'status' + (isError ? ' error' : '');
+}
+
+function renderResults(items) {
+  resultsList.innerHTML = '';
+  resultsTitle.textContent = `Results (${items.length})`;
+
+  if (items.length === 0) {
+    resultsList.innerHTML = '<div class="empty">No profiles came back for this batch.</div>';
+  } else {
+    items.forEach((item, i) => {
+      const name = item.name || item.fullName || [item.firstName, item.lastName].filter(Boolean).join(' ') || 'Unnamed profile';
+      const url = item.linkedinUrl || item.profileUrl || item.url || '#';
+      const headline = item.headline || item.title || '';
+      const location = item.location?.linkedinText || item.location || '';
+      const company = item.currentPosition?.[0]?.companyName || item.experience?.[0]?.companyName || '';
+      const email = item.email || '';
+
+      const el = document.createElement('div');
+      el.className = 'entry';
+      el.innerHTML = `
+        <div class="name"><span class="num">${String(i + 1).padStart(2, '0')}</span><a href="${escapeAttr(url)}" target="_blank" rel="noopener">${escapeHtml(name)}</a></div>
+        ${headline ? `<div class="headline">${escapeHtml(headline)}</div>` : ''}
+        <div class="meta">
+          ${location ? `<span><b>Location</b> ${escapeHtml(location)}</span>` : ''}
+          ${company ? `<span><b>Current</b> ${escapeHtml(company)}</span>` : ''}
+          ${email ? `<span><b>Email</b> ${escapeHtml(email)}</span>` : ''}
+        </div>
+      `;
+      resultsList.appendChild(el);
+    });
+  }
+
+  resultsWrap.hidden = false;
+
+  const blob = new Blob([JSON.stringify(items, null, 2)], { type: 'application/json' });
+  downloadLink.href = URL.createObjectURL(blob);
+  downloadLink.download = 'profiles.json';
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+function escapeAttr(s) { return escapeHtml(s); }
+</script>
+</body>
+</html>

@@ -1,0 +1,6 @@
+{
+  "name": "profile-lookup",
+  "version": "1.0.0",
+  "private": true,
+  "description": "LinkedIn profile lookup via Apify harvestapi actor, deployed on Netlify."
+}
